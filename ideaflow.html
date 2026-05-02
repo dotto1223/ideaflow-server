@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>IdeaFlow</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+body { background: #fff; color: #111; }
+.app { min-height: 100vh; display: flex; flex-direction: column; max-width: 700px; margin: 0 auto; }
+.header { padding: 1.25rem 1.5rem 0; display: flex; align-items: center; gap: 10px; }
+.logo { width: 30px; height: 30px; background: #111; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.logo svg { width: 16px; height: 16px; fill: #fff; }
+.app-title { font-size: 15px; font-weight: 500; }
+.app-sub { font-size: 12px; color: #888; }
+.status { margin-left: auto; font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #EAF3DE; color: #3B6D11; }
+.status.offline { background: #FCEBEB; color: #A32D2D; }
+.tabs { display: flex; padding: 0.75rem 1.5rem 0; border-bottom: 1px solid #eee; margin-top: 0.75rem; }
+.tab { padding: 7px 14px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; color: #888; }
+.tab.active { color: #111; border-bottom-color: #111; font-weight: 500; }
+.content { padding: 1.25rem 1.5rem; flex: 1; }
+.section { display: none; }
+.section.active { display: block; }
+.info-box { border-radius: 8px; padding: 9px 12px; font-size: 12px; margin-bottom: 10px; background: #EAF3DE; color: #3B6D11; }
+.info-box.err { background: #FCEBEB; color: #A32D2D; }
+.capture-box { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+.capture-box textarea { width: 100%; border: none; outline: none; font-size: 14px; font-family: system-ui; color: #111; resize: none; min-height: 70px; }
+.qlabel { font-size: 12px; color: #888; margin-bottom: 3px; display: block; }
+.qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0.75rem; }
+.qfield { display: flex; flex-direction: column; }
+.qfield select, .qfield input { font-size: 13px; padding: 6px 8px; border: 1px solid #eee; border-radius: 6px; }
+.gen-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: 500; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+.gen-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.loading { display: none; align-items: center; gap: 8px; color: #888; font-size: 13px; padding: 0.75rem 0; }
+.loading.show { display: flex; }
+.spinner { width: 15px; height: 15px; border: 1.5px solid #eee; border-top-color: #111; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.err-msg { display: none; background: #FCEBEB; color: #A32D2D; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-top: 8px; }
+.err-msg.show { display: block; }
+.sec-label { font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; }
+.idea-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 0.875rem 1rem; cursor: pointer; margin-bottom: 8px; }
+.idea-card.sel { border: 1.5px solid #111; }
+.idea-name { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: 20px; }
+.bh { background: #FCEBEB; color: #A32D2D; }
+.bm { background: #FAEEDA; color: #854F0B; }
+.bl { background: #EAF3DE; color: #3B6D11; }
+.bt { background: #f5f5f5; color: #888; }
+.bp { background: #E6F1FB; color: #185FA5; }
+.pbar { height: 3px; background: #f5f5f5; border-radius: 2px; }
+.pfill { height: 100%; border-radius: 2px; background: #111; }
+.empty { text-align: center; padding: 2.5rem 1rem; color: #ccc; font-size: 13px; }
+.step-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1rem; }
+.step { display: flex; align-items: flex-start; gap: 9px; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 9px 12px; }
+.snum { width: 22px; height: 22px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; color: #888; flex-shrink: 0; }
+.snum.done { background: #111; color: #fff; }
+.stxt { flex: 1; }
+.sname { font-size: 13px; font-weight: 500; }
+.sname.done { text-decoration: line-through; color: #ccc; font-weight: 400; }
+.sdesc { font-size: 11px; color: #888; margin-top: 2px; }
+.swk { font-size: 11px; color: #ccc; white-space: nowrap; padding-top: 2px; }
+.chk { width: 19px; height: 19px; border-radius: 50%; border: 1px solid #ddd; background: transparent; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+.chk.done { background: #111; border-color: #111; }
+.prog-hd { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 5px; }
+.prog6 { height: 6px; background: #f5f5f5; border-radius: 3px; margin-bottom: 1rem; }
+.prog6fill { height: 100%; border-radius: 3px; background: #111; }
+.gtable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.gtable th { text-align: left; padding: 5px 7px; color: #888; font-weight: 400; border-bottom: 1px solid #eee; }
+.gtable td { padding: 5px 7px; border-bottom: 1px solid #eee; vertical-align: middle; }
+.gbar-bg { height: 13px; background: #f5f5f5; border-radius: 3px; position: relative; min-width: 120px; }
+.gbar { height: 100%; border-radius: 3px; position: absolute; top: 0; min-width: 6px; }
+.no-idea { text-align: center; padding: 2rem; color: #ccc; font-size: 13px; }
+.detail-title { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+.detail-sum { font-size: 12px; color: #888; margin-bottom: 10px; }
+.refine-btn { font-size: 12px; color: #888; background: none; border: 1px solid #eee; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo"><svg viewBox="0 0 18 18"><path d="M9 1l2 6h6l-5 3.5 2 6L9 13l-5 3.5 2-6L1 7h6z"/></svg></div>
+    <div><div class="app-title">IdeaFlow</div><div class="app-sub">Capture · Plan · Track</div></div>
+    <div class="status" id="status">Checking...</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="goTab('capture')">+ New idea</div>
+    <div class="tab" onclick="goTab('ideas')">My ideas</div>
+    <div class="tab" onclick="goTab('workflow')">Workflow</div>
+    <div class="tab" onclick="goTab('gantt')">Gantt</div>
+  </div>
+  <div class="content">
+    <div class="section active" id="tab-capture">
+      <div class="info-box" id="info-box">Connecting to server...</div>
+      <div class="capture-box">
+        <textarea id="idea-input" placeholder="What's your idea?" rows="4"></textarea>
+      </div>
+      <div class="sec-label">A few quick questions</div>
+      <div class="qgrid">
+        <div class="qfield"><span class="qlabel">Timeframe</span>
+          <select id="q-time"><option>1 week</option><option>2 weeks</option><option selected>1 month</option><option>3 months</option><option>6 months</option><option>1 year</option></select>
+        </div>
+        <div class="qfield"><span class="qlabel">Priority</span>
+          <select id="q-pri"><option>Low</option><option selected>Medium</option><option>High</option></select>
+        </div>
+        <div class="qfield"><span class="qlabel">Stakeholders</span><input id="q-stake" type="text" placeholder="e.g. team, clients" /></div>
+        <div class="qfield"><span class="qlabel">Resources needed</span><input id="q-res" type="text" placeholder="e.g. budget, tools" /></div>
+      </div>
+      <button class="gen-btn" id="gen-btn" onclick="generatePlan()">✨ Generate plan with AI</button>
+      <div class="loading" id="loading"><div class="spinner"></div>AI is building your plan... 10-15 seconds</div>
+      <div class="err-msg" id="err"></div>
+    </div>
+    <div class="section" id="tab-ideas">
+      <div class="sec-label">Your ideas</div>
+      <div id="ideas-list"><div class="empty">No ideas yet!</div></div>
+    </div>
+    <div class="section" id="tab-workflow">
+      <div id="wf-content"><div class="no-idea">Select an idea to see workflow</div></div>
+    </div>
+    <div class="section" id="tab-gantt">
+      <div id="gt-content"><div class="no-idea">Select an idea to see Gantt chart</div></div>
+    </div>
+  </div>
+</div>
+<script>
+let ideas=[], selId=null;
+const SERVER='http://localhost:3000';
+
+async function checkServer(){
+  const el=document.getElementById('status');
+  const box=document.getElementById('info-box');
+  try{
+    await fetch(SERVER+'/health');
+    el.textContent='● Online'; el.className='status';
+    box.textContent='✅ Connected to AI server — ready!'; box.className='info-box';
+  }catch(e){
+    el.textContent='● Offline'; el.className='status offline';
+    box.textContent='⚠️ Server offline — open PowerShell and run: node server.js'; box.className='info-box err';
+  }
+}
+checkServer();
+
+function goTab(t){
+  ['capture','ideas','workflow','gantt'].forEach((n,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',n===t);
+    document.getElementById('tab-'+n).classList.toggle('active',n===t);
+  });
+}
+function pct(idea){return !idea.steps.length?0:Math.round(idea.steps.filter(s=>s.done).length/idea.steps.length*100);}
+
+async function generatePlan(){
+  const txt=document.getElementById('idea-input').value.trim();
+  if(!txt){alert('Please describe your idea first.');return;}
+  const tf=document.getElementById('q-time').value;
+  const pri=document.getElementById('q-pri').value;
+  const st=document.getElementById('q-stake').value||'self';
+  const res=document.getElementById('q-res').value||'TBD';
+  document.getElementById('gen-btn').disabled=true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('err').classList.remove('show');
+  try{
+    const r=await fetch(SERVER+'/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',max_tokens:1500,
+        messages:[{role:'user',content:`Return ONLY valid JSON, no markdown.\nIdea: "${txt}"\nTimeframe: ${tf}, Priority: ${pri}, Stakeholders: ${st}, Resources: ${res}\n{"title":"max 6 words","summary":"one sentence","steps":[{"name":"step","description":"action","week":1,"duration":1}]}\n6-8 specific steps, fit within ${tf}.`}]
+      })
+    });
+    if(!r.ok)throw new Error('Server error '+r.status);
+    const data=await r.json();
+    if(data.error)throw new Error(data.error);
+    const raw=(data.content||[]).map(c=>c.text||'').join('').trim();
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('No JSON found');
+    const plan=JSON.parse(m[0]);
+    const idea={id:Date.now(),title:plan.title||'Untitled',summary:plan.summary||'',raw:txt,tf,pri,st,res,steps:(plan.steps||[]).map((s,i)=>({...s,id:i,done:false})),created:new Date().toLocaleDateString()};
+    ideas.unshift(idea); selId=idea.id;
+    document.getElementById('idea-input').value='';
+    document.getElementById('q-stake').value='';
+    document.getElementById('q-res').value='';
+    renderAll(); goTab('workflow');
+  }catch(e){
+    const el=document.getElementById('err');
+    el.textContent='❌ '+e.message; el.classList.add('show');
+  }
+  document.getElementById('gen-btn').disabled=false;
+  document.getElementById('loading').classList.remove('show');
+}
+
+function pickIdea(id){selId=id;renderAll();goTab('workflow');}
+function toggleStep(iid,sid){const idea=ideas.find(i=>i.id===iid);if(!idea)return;const s=idea.steps.find(s=>s.id===sid);if(s)s.done=!s.done;renderAll();}
+function renderAll(){renderList();renderWF();renderGantt();}
+
+function renderList(){
+  const el=document.getElementById('ideas-list');
+  if(!ideas.length){el.innerHTML='<div class="empty">No ideas yet!</div>';return;}
+  const bmap={High:'bh',Medium:'bm',Low:'bl'};
+  el.innerHTML=ideas.map(idea=>{const p=pct(idea);return`<div class="idea-card${selId===idea.id?' sel':''}" onclick="pickIdea(${idea.id})"><div class="idea-name">${idea.title}</div><div class="badges"><span class="badge ${bmap[idea.pri]||'bm'}">${idea.pri}</span><span class="badge bt">${idea.tf}</span><span class="badge bp">${p}% done</span></div><div class="pbar"><div class="pfill" style="width:${p}%"></div></div></div>`;}).join('');
+}
+
+function renderWF(){
+  const el=document.getElementById('wf-content');
+  const idea=ideas.find(i=>i.id===selId);
+  if(!idea){el.innerHTML='<div class="no-idea">Select an idea to see workflow</div>';return;}
+  const p=pct(idea);
+  el.innerHTML=`<div class="detail-title">${idea.title}</div><div class="detail-sum">${idea.summary}</div><div class="prog-hd"><span>Progress</span><span>${p}%</span></div><div class="prog6"><div class="prog6fill" style="width:${p}%"></div></div><div class="sec-label">Action steps</div><div class="step-list">${idea.steps.map(s=>`<div class="step"><div class="snum${s.done?' done':''}">${s.id+1}</div><div class="stxt"><div class="sname${s.done?' done':''}">${s.name}</div><div class="sdesc">${s.description}</div></div><div class="swk">Wk ${s.week}</div><button class="chk${s.done?' done':''}" onclick="toggleStep(${idea.id},${s.id})"></button></div>`).join('')}</div>`;
+}
+
+function renderGantt(){
+  const el=document.getElementById('gt-content');
+  const idea=ideas.find(i=>i.id===selId);
+  if(!idea){el.innerHTML='<div class="no-idea">Select an idea to see Gantt</div>';return;}
+  const maxW=Math.max(...idea.steps.map(s=>s.week+s.duration-1),1);
+  el.innerHTML=`<div class="detail-title" style="margin-bottom:0.75rem;">${idea.title}</div><div style="overflow-x:auto;"><table class="gtable"><thead><tr><th style="min-width:120px;">Step</th><th>Wk</th><th style="min-width:160px;">Timeline</th><th>Status</th></tr></thead><tbody>${idea.steps.map(s=>{const l=Math.round(((s.week-1)/maxW)*100);const w=Math.max(Math.round((s.duration/maxW)*100),6);const col=s.done?'#1D9E75':'#378ADD';return`<tr><td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</td><td style="font-size:11px;color:#ccc;">${s.week}</td><td><div class="gbar-bg"><div class="gbar" style="left:${l}%;width:${w}%;background:${col};"></div></div></td><td style="font-size:11px;color:${s.done?'#1D9E75':'#ccc'};">${s.done?'✓ Done':'Pending'}</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+</script>
+</body>
+</html>
